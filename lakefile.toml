@@ -1,0 +1,40 @@
+name = "hex-number-field-tower-mathlib"
+defaultTargets = ["HexNumberFieldTowerMathlib"]
+
+leanOptions = [
+  { name = "doc.verso", value = true },
+  { name = "doc.verso.suggestions", value = false },
+]
+
+[[require]]
+name = "HexNumberFieldTower"
+git = "https://github.com/leanprover/hex-number-field-tower.git"
+rev = "f64061cda6bce72423f21376905bf5c46321aa11"
+
+[[require]]
+name = "HexNumberFieldMathlib"
+git = "https://github.com/leanprover/hex-number-field-mathlib.git"
+rev = "67954b740144c3fdd002a8337fd0841d13c45eba"
+
+[[require]]
+name = "HexResultantMathlib"
+git = "https://github.com/leanprover/hex-resultant-mathlib.git"
+rev = "d0afe79f707188013c3e8059b93d784722aa3e56"
+
+[[require]]
+name = "HexBerlekampZassenhausMathlib"
+git = "https://github.com/leanprover/hex-berlekamp-zassenhaus-mathlib.git"
+rev = "bf5878efee66b0ff8ee0e70365869954cad69226"
+
+[[require]]
+name = "HexRowReduceMathlib"
+git = "https://github.com/leanprover/hex-row-reduce-mathlib.git"
+rev = "c442625957482222e87d10b0d1d11dafd859ac91"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.34.0-rc2"
+
+[[lean_lib]]
+name = "HexNumberFieldTowerMathlib"
