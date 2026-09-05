@@ -9,27 +9,27 @@ leanOptions = [
 [[require]]
 name = "HexNumberFieldTower"
 git = "https://github.com/leanprover/hex-number-field-tower.git"
-rev = "f64061cda6bce72423f21376905bf5c46321aa11"
+rev = "0db5a4e82930d273839a8ca05aee0af2bb8c7fc5"
 
 [[require]]
 name = "HexNumberFieldMathlib"
 git = "https://github.com/leanprover/hex-number-field-mathlib.git"
-rev = "67954b740144c3fdd002a8337fd0841d13c45eba"
+rev = "7d5f174302c52c88847cabf4dd76a4a8674d33a4"
 
 [[require]]
 name = "HexResultantMathlib"
 git = "https://github.com/leanprover/hex-resultant-mathlib.git"
-rev = "d0afe79f707188013c3e8059b93d784722aa3e56"
+rev = "8167fe0e98451e842213cecbbc36f7cbfb668db7"
 
 [[require]]
 name = "HexBerlekampZassenhausMathlib"
 git = "https://github.com/leanprover/hex-berlekamp-zassenhaus-mathlib.git"
-rev = "bf5878efee66b0ff8ee0e70365869954cad69226"
+rev = "3aa487592f8959889505ceeae6e4bde9fa137a97"
 
 [[require]]
 name = "HexRowReduceMathlib"
 git = "https://github.com/leanprover/hex-row-reduce-mathlib.git"
-rev = "c442625957482222e87d10b0d1d11dafd859ac91"
+rev = "3c423e064b2ffc15449d310d1128cc1397d7627b"
 
 [[require]]
 name = "mathlib"

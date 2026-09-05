@@ -54,6 +54,9 @@ noncomputable def rawOuter (levels : List Level)
     (fun a value => Polynomial.C (rawPolynomial levels a) +
       Polynomial.X * value) 0
 
+/-- The Horner fold defining {name}`rawPolynomial` has the expected
+coefficients: coefficient `n` is the complex denotation of the `n`-th raw
+coefficient, with `0` beyond the end. -/
 theorem raw_coeff_horner (levels : List Level) :
     ∀ (coefficients : List (Arithmetic.Coeff levels)) (n : Nat),
       (coefficients.foldr
@@ -199,6 +202,8 @@ noncomputable def lowerHom (level : Level) (lower : List Level)
           LevelSemantics.coeffDenote_lift level lower
             (Nat.zero_lt_of_lt hvalid.1.1)] }
 
+/-- The lower-coefficient embedding {name}`lowerHom` acts by lifting a raw
+lower-tower coefficient into the constant block of the extended tower. -/
 @[simp]
 theorem lowerHom_apply (level : Level) (lower : List Level)
     (hvalid : LevelsValid (level :: lower))
@@ -290,84 +295,12 @@ theorem topGenerator_evalAt (level : Level) (lower : List Level)
       have := hvalid.1.1
       omega
     unfold Factor.topGenerator
-    rw [if_neg hdegree]
+    rw [ite_eq_right hdegree]
     change LevelSemantics.evalAt level lower x
         (Arithmetic.fixedCoeffs (level.degree * levelsDim lower)
           ((Array.replicate (levelsDim lower) 0).push 1)) = x
     rw [LevelSemantics.evalAt_fixed,
       LevelSemantics.evalAt_generator level lower hvalid hdegree' x]
-
-/-- The newest generator satisfies the executable monic relation over the
-constant-block copy of the lower coefficient field. -/
-theorem relation_eval_top (level : Level) (lower : List Level)
-    (hvalid : LevelsValid (level :: lower))
-    (hinjectiveTop : LevelSemantics.DenoteInjective (level :: lower)) :
-    let hinjectiveLower := hinjectiveTop.tail level lower
-      hvalid.1.1
-    let hinvLower := LevelSemantics.coeffDenote_inv lower hvalid.2.2
-      hinjectiveLower
-    let hinvTop := LevelSemantics.coeffDenote_inv (level :: lower) hvalid
-      hinjectiveTop
-    letI : Field (Arithmetic.Coeff lower) :=
-      coeffFieldPoly lower hvalid.2.2 hinjectiveLower hinvLower
-    letI : Field (Arithmetic.Coeff (level :: lower)) :=
-      coeffFieldPoly (level :: lower) hvalid hinjectiveTop hinvTop
-    (HexPolyMathlib.toPolynomial
-        (Arithmetic.Coeff.relation level lower)).eval₂
-      (lowerHom level lower hvalid hinjectiveTop)
-      (Factor.topGenerator level lower) = 0 := by
-  let hinjectiveLower := hinjectiveTop.tail level lower hvalid.1.1
-  let hinvLower := LevelSemantics.coeffDenote_inv lower hvalid.2.2
-    hinjectiveLower
-  let hinvTop := LevelSemantics.coeffDenote_inv (level :: lower) hvalid
-    hinjectiveTop
-  letI : Field (Arithmetic.Coeff lower) :=
-    coeffFieldPoly lower hvalid.2.2 hinjectiveLower hinvLower
-  letI : Field (Arithmetic.Coeff (level :: lower)) :=
-    coeffFieldPoly (level :: lower) hvalid hinjectiveTop hinvTop
-  apply hinjectiveTop
-  change LevelSemantics.coeffDenote (level :: lower)
-      ((HexPolyMathlib.toPolynomial
-        (Arithmetic.Coeff.relation level lower)).eval₂
-          (lowerHom level lower hvalid hinjectiveTop)
-          (Factor.topGenerator level lower)) =
-    LevelSemantics.coeffDenote (level :: lower) 0
-  rw [LevelSemantics.coeffDenote_zero]
-  change (LevelSemantics.coeffHom (level :: lower) hvalid
-      hinjectiveTop hinvTop)
-        ((HexPolyMathlib.toPolynomial
-          (Arithmetic.Coeff.relation level lower)).eval₂
-            (lowerHom level lower hvalid hinjectiveTop)
-            (Factor.topGenerator level lower)) = 0
-  rw [Polynomial.hom_eval₂]
-  have hcomp :
-      (LevelSemantics.coeffHom (level :: lower) hvalid hinjectiveTop
-          hinvTop).comp (lowerHom level lower hvalid hinjectiveTop) =
-        LevelSemantics.coeffHom lower hvalid.2.2 hinjectiveLower hinvLower := by
-    ext a
-    change LevelSemantics.coeffDenote (level :: lower)
-        (lowerHom level lower hvalid hinjectiveTop a) =
-      LevelSemantics.coeffDenote lower a
-    rw [lowerHom_apply, LevelSemantics.coeffDenote_lift level lower
-      (Nat.zero_lt_of_lt hvalid.1.1)]
-  have hgen :
-      LevelSemantics.coeffHom (level :: lower) hvalid hinjectiveTop hinvTop
-          (Factor.topGenerator level lower) = level.root.toComplex :=
-    topGenerator_denote level lower hvalid
-  rw [hcomp, hgen]
-  rw [show (HexPolyMathlib.toPolynomial
-      (Arithmetic.Coeff.relation level lower)).eval₂
-        (LevelSemantics.coeffHom lower hvalid.2.2
-          hinjectiveLower hinvLower) level.root.toComplex =
-      LevelSemantics.denseMap lower level.root.toComplex hvalid.2.2
-        hinjectiveLower hinvLower
-          (Arithmetic.Coeff.relation level lower) by rfl]
-  rw [LevelSemantics.denseMap_eq_denseEval lower level.root.toComplex
-    hvalid.2.2 hinjectiveLower hinvLower (level.degree + 1)
-    (Arithmetic.Coeff.relation level lower) (by
-      rw [LevelSemantics.relation_degree level lower hvalid]
-      omega)]
-  exact LevelSemantics.denseEval_relation level lower hvalid
 
 /-- Coefficientwise semantic interpretation is a ring homomorphism once the
 canonical lower tower has its transferred field structure. -/
@@ -389,6 +322,9 @@ noncomputable def rawPolynomialHom (levels : List Level)
     (LevelSemantics.coeffHom levels hvalid hinjective hinv)).comp
       (HexPolyMathlib.equiv (R := Arithmetic.Coeff levels)).toRingHom
 
+/-- The bundled ring homomorphism {name}`rawPolynomialHom` agrees pointwise
+with the direct Horner interpretation {name}`rawPolynomial`, so the latter
+inherits all homomorphism laws. -/
 theorem rawPolynomialHom_apply (levels : List Level)
     (hvalid : LevelsValid levels)
     (hinjective : LevelSemantics.DenoteInjective levels)
@@ -401,9 +337,9 @@ theorem rawPolynomialHom_apply (levels : List Level)
     letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
     rawPolynomialHom levels hvalid hinjective hinv f =
       rawPolynomial levels f := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   ext n
   rw [coeff_rawPolynomial, rawToComplex_eq_denote]
   simp [rawPolynomialHom, LevelSemantics.coeffHom,
@@ -423,7 +359,7 @@ theorem rawPolynomial_eq_map (levels : List Level)
     rawPolynomial levels f =
       (HexPolyMathlib.toPolynomial f).map
         (LevelSemantics.coeffHom levels hvalid hinjective hinv) := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
   rw [← rawPolynomialHom_apply levels hvalid hinjective hinv]
   rfl
@@ -437,9 +373,9 @@ theorem rawPolynomial_injective (levels : List Level)
       LevelSemantics.coeffDenote levels a⁻¹ =
         (LevelSemantics.coeffDenote levels a)⁻¹) :
     Function.Injective (rawPolynomial levels) := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   intro f g h
   apply (HexPolyMathlib.equiv
     (R := Arithmetic.Coeff levels)).injective
@@ -454,6 +390,7 @@ theorem rawPolynomial_injective (levels : List Level)
       (LevelSemantics.coeffHom levels hvalid hinjective hinv) at h
   exact h
 
+/-- Semantic interpretation sends the executable one polynomial to `1`. -/
 @[simp]
 theorem rawPolynomial_one (levels : List Level)
     (hvalid : LevelsValid levels)
@@ -462,12 +399,14 @@ theorem rawPolynomial_one (levels : List Level)
       LevelSemantics.coeffDenote levels a⁻¹ =
         (LevelSemantics.coeffDenote levels a)⁻¹) :
     rawPolynomial levels 1 = 1 := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   rw [← rawPolynomialHom_apply levels hvalid hinjective hinv]
   exact (rawPolynomialHom levels hvalid hinjective hinv).map_one
 
+/-- Semantic interpretation turns executable raw-polynomial multiplication
+into multiplication in `Polynomial ℂ`. -/
 @[simp]
 theorem rawPolynomial_mul (levels : List Level)
     (hvalid : LevelsValid levels)
@@ -478,9 +417,9 @@ theorem rawPolynomial_mul (levels : List Level)
     (f g : DensePoly (Arithmetic.Coeff levels)) :
     rawPolynomial levels (f * g) =
       rawPolynomial levels f * rawPolynomial levels g := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   let φ := rawPolynomialHom levels hvalid hinjective hinv
   calc
     rawPolynomial levels (f * g) = φ (f * g) :=
@@ -502,9 +441,9 @@ theorem rawPolynomial_C (levels : List Level)
     (a : Arithmetic.Coeff levels) :
     rawPolynomial levels (DensePoly.C a) =
       Polynomial.C (LevelSemantics.coeffDenote levels a) := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   rw [← rawPolynomialHom_apply levels hvalid hinjective hinv]
   simp [rawPolynomialHom, HexPolyMathlib.toPolynomial_C,
     LevelSemantics.coeffHom]
@@ -561,6 +500,9 @@ noncomputable def conjugatePolynomial (level : Level) (lower : List Level)
     (fun a value => Polynomial.C (LevelSemantics.evalAt level lower x a) +
       Polynomial.X * value) 0
 
+/-- The Horner fold defining {name}`conjugatePolynomial` has the expected
+coefficients: coefficient `n` evaluates the `n`-th raw coefficient at the
+conjugate `x`, with `0` beyond the end. -/
 theorem conjugate_coeff_horner (level : Level) (lower : List Level)
     (x : ℂ) : ∀ (coefficients : List (Array Rat)) (n : Nat),
       (coefficients.foldr
@@ -586,6 +528,8 @@ theorem conjugate_coeff_horner (level : Level) (lower : List Level)
   | _ :: coefficients, n + 1 => by
       simpa using conjugate_coeff_horner level lower x coefficients n
 
+/-- Coefficients of the conjugate interpretation are the conjugate
+evaluations of the raw coefficient blocks. -/
 theorem coeff_conjugatePolynomial (level : Level) (lower : List Level)
     (x : ℂ) (f : Array (Array Rat)) (n : Nat) :
     (conjugatePolynomial level lower x f).coeff n =
@@ -612,7 +556,7 @@ theorem conjugatePolynomial_eq_map (level : Level) (lower : List Level)
       (HexPolyMathlib.toPolynomial
         (Factor.rawPoly (level :: lower) f)).map
           (conjugateMap level lower hvalid hinjective x hrelation) := by
-  letI : Field (Arithmetic.Coeff (level :: lower)) :=
+  let : Field (Arithmetic.Coeff (level :: lower)) :=
     coeffFieldPoly (level :: lower) hvalid hinjective
       (LevelSemantics.coeffDenote_inv (level :: lower) hvalid hinjective)
   ext n
@@ -627,7 +571,7 @@ theorem conjugatePolynomial_eq_map (level : Level) (lower : List Level)
     have hright : (f.map
         (Arithmetic.Coeff.ofData (level :: lower))).getD n 0 =
           Arithmetic.Coeff.ofData (level :: lower) f[n] := by
-      rw [Array.getD, dif_pos hnmap]
+      rw [Array.getD, dite_eq_left hnmap]
       simp
     rw [hleft]
     calc
@@ -647,7 +591,7 @@ theorem conjugatePolynomial_eq_map (level : Level) (lower : List Level)
       simp [Array.getD, hn]
     have hright : (f.map
         (Arithmetic.Coeff.ofData (level :: lower))).getD n 0 = 0 := by
-      rw [Array.getD, dif_neg hnmap]
+      rw [Array.getD, dite_eq_right hnmap]
     rw [hleft]
     calc
       LevelSemantics.evalAt level lower x #[] =
@@ -697,9 +641,9 @@ theorem derivative_eq (levels : List Level)
     letI : Field (Arithmetic.Coeff levels) :=
       coeffFieldPoly levels hvalid hinjective hinv
     derivative levels f = DensePoly.derivative f := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   apply rawPolynomial_injective levels hvalid hinjective hinv
   rw [rawPolynomial_derivative]
   have hmap (g : DensePoly (Arithmetic.Coeff levels)) :
@@ -722,9 +666,9 @@ theorem isSquarefree_iff (levels : List Level)
     (f : Array (Array Rat)) :
     Norm.isSquarefree levels f ↔
       Squarefree (rawPolynomial levels (Factor.rawPoly levels f)) := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   let p := Factor.rawPoly levels f
   let P := HexPolyMathlib.toPolynomial p
   let d := DensePoly.derivative p
@@ -808,6 +752,9 @@ theorem isSquarefree_iff (levels : List Level)
       (LevelSemantics.coeffHom levels hvalid hinjective hinv)
   exact hboolean.trans hsemantic.symm
 
+/-- The Horner fold defining {name}`rawOuter` has the expected coefficients:
+coefficient `n` is the raw interpretation of the `n`-th inner polynomial,
+with `0` beyond the end. -/
 theorem outer_coeff_horner (levels : List Level) :
     ∀ (coefficients : List (DensePoly (Arithmetic.Coeff levels)))
       (n : Nat),
@@ -820,12 +767,16 @@ theorem outer_coeff_horner (levels : List Level) :
   | _ :: coefficients, n + 1 => by
       simpa using outer_coeff_horner levels coefficients n
 
+/-- Defaulted indexing through `Array.toList` agrees with defaulted array
+indexing for inner dense polynomials. -/
 theorem dense_array_toList_getD (levels : List Level)
     (coefficients : Array (DensePoly (Arithmetic.Coeff levels))) (n : Nat) :
     coefficients.toList.getD n 0 = coefficients.getD n 0 := by
   rw [List.getD_eq_getElem?_getD, Array.getD_eq_getD_getElem?,
     Array.getElem?_toList]
 
+/-- Coefficients of the outer interpretation are the raw interpretations of
+the executable inner coefficients. -/
 theorem coeff_rawOuter (levels : List Level)
     (f : DensePoly (DensePoly (Arithmetic.Coeff levels))) (n : Nat) :
     (rawOuter levels f).coeff n = rawPolynomial levels (f.coeff n) := by
@@ -833,6 +784,8 @@ theorem coeff_rawOuter (levels : List Level)
     dense_array_toList_getD]
   rfl
 
+/-- The outer interpretation is coefficientwise mapping through
+{name}`rawPolynomialHom`, exposing `rawOuter` to `Polynomial.map` lemmas. -/
 theorem rawOuter_eq_map (levels : List Level)
     (hvalid : LevelsValid levels)
     (hinjective : LevelSemantics.DenoteInjective levels)
@@ -845,9 +798,9 @@ theorem rawOuter_eq_map (levels : List Level)
     letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
     rawOuter levels f = (HexPolyMathlib.toPolynomial f).map
       (rawPolynomialHom levels hvalid hinjective hinv) := by
-  letI : Field (Arithmetic.Coeff levels) :=
+  let : Field (Arithmetic.Coeff levels) :=
     coeffFieldPoly levels hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   ext n
   rw [coeff_rawOuter, Polynomial.coeff_map,
     HexPolyMathlib.coeff_toPolynomial,
@@ -926,6 +879,9 @@ noncomputable def outerEval (level : Level) (lower : List Level)
   exact (HexPolyMathlib.toPolynomial g).eval₂ coefficientHom
     (Polynomial.C (Factor.topGenerator level lower))
 
+/-- The evaluation homomorphism {name}`outerEvalHom` acts by mapping inner
+coefficients through the lower embedding and evaluating the outer variable at
+the constant top generator. -/
 theorem outerEvalHom_apply (level : Level) (lower : List Level)
     (hvalid : LevelsValid (level :: lower))
     (hinjectiveTop : LevelSemantics.DenoteInjective (level :: lower))
@@ -970,11 +926,11 @@ theorem outerEval_map (level : Level) (lower : List Level)
     hinjectiveLower
   let hinvTop := LevelSemantics.coeffDenote_inv (level :: lower) hvalid
     hinjectiveTop
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid.2.2 hinjectiveLower hinvLower
-  letI : Field (Arithmetic.Coeff (level :: lower)) :=
+  let : Field (Arithmetic.Coeff (level :: lower)) :=
     coeffFieldPoly (level :: lower) hvalid hinjectiveTop hinvTop
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   let topHom := LevelSemantics.coeffHom (level :: lower) hvalid
     hinjectiveTop hinvTop
   let lowerPolyHom : DensePoly (Arithmetic.Coeff lower) →+*
@@ -1034,13 +990,12 @@ theorem eval_liftCoefficient (level : Level) (lower : List Level)
     (rawOuter lower (liftCoefficient level lower a)).eval
         (Polynomial.C x) =
       Polynomial.C (LevelSemantics.evalAt level lower x a) := by
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid.2.2 hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   let lifted := liftCoefficient level lower a
   have hsize : lifted.size ≤ level.degree := by
-    exact (DensePoly.size_ofCoeffs_le _).trans (by simp [lifted,
-      liftCoefficient])
+    exact (DensePoly.size_ofCoeffs_le _).trans (by simp)
   have hdegree : (HexPolyMathlib.toPolynomial lifted).natDegree <
       level.degree := by
     rw [HexPolyMathlib.natDegree_toPolynomial]
@@ -1083,9 +1038,9 @@ theorem eval_shiftBase (lower : List Level)
         DensePoly.C (Arithmetic.Coeff.ofData lower #[(-(c : Rat))])]
     (rawOuter lower base).eval (Polynomial.C x) =
       Polynomial.X - Polynomial.C ((c : ℂ) * x) := by
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   let base : DensePoly (DensePoly (Arithmetic.Coeff lower)) :=
     DensePoly.ofCoeffs #[DensePoly.monomial 1 1,
       DensePoly.C (Arithmetic.Coeff.ofData lower #[(-(c : Rat))])]
@@ -1113,7 +1068,6 @@ theorem eval_shiftBase (lower : List Level)
     LevelSemantics.denote_rat lower hvalid]
   rw [hone]
   rw [Polynomial.monomial_one_one_eq_X]
-  push_cast
   ring
 
 /-- Specializing the shifted bivariate input at a conjugate gives ordinary
@@ -1129,9 +1083,9 @@ theorem eval_shiftedOuter (level : Level) (lower : List Level)
         (Polynomial.C x) =
       (conjugatePolynomial level lower x f).comp
         (Polynomial.X - Polynomial.C ((c : ℂ) * x)) := by
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid.2.2 hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   let ψ (g : DensePoly (DensePoly (Arithmetic.Coeff lower))) :
       Polynomial ℂ := (rawOuter lower g).eval (Polynomial.C x)
   let q := Polynomial.X - Polynomial.C ((c : ℂ) * x)
@@ -1183,12 +1137,12 @@ theorem eval_shiftedOuter (level : Level) (lower : List Level)
     induction items with
     | nil =>
         intro state
-        simp [hzero]
+        simp
     | cons a items ih =>
         intro state
         simp only [List.foldl_cons, List.foldr_cons]
         rw [ih]
-        simp only [Prod.fst, Prod.snd]
+        simp only []
         rw [hadd, hmul, hmul, hlift, hbase]
         simp only [
           Polynomial.add_comp, Polynomial.C_comp,
@@ -1234,9 +1188,9 @@ theorem rawOuter_defining (level : Level) (lower : List Level)
     change Arithmetic.Coeff.ofData lower #[] =
       Arithmetic.Coeff.ofData lower #[]
     rfl
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid.2.2 hinjective hinv
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   apply Polynomial.ext
   intro n
   by_cases hn : n ≤ level.degree
@@ -1275,11 +1229,11 @@ theorem outerEval_defining (level : Level) (lower : List Level)
     hinjectiveLower
   let hinvTop := LevelSemantics.coeffDenote_inv (level :: lower) hvalid
     hinjectiveTop
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid.2.2 hinjectiveLower hinvLower
-  letI : Field (Arithmetic.Coeff (level :: lower)) :=
+  let : Field (Arithmetic.Coeff (level :: lower)) :=
     coeffFieldPoly (level :: lower) hvalid hinjectiveTop hinvTop
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   let topHom := LevelSemantics.coeffHom (level :: lower) hvalid
     hinjectiveTop hinvTop
   apply Polynomial.map_injective topHom topHom.injective
@@ -1308,8 +1262,10 @@ theorem outerEval_defining (level : Level) (lower : List Level)
         omega)]
     exact LevelSemantics.denseEval_relation level lower hvalid
   rw [Polynomial.eval_map]
-  simpa [hrelation]
+  simp [hrelation]
 
+/-- Rebuilding a raw dense polynomial from its flattened coordinate arrays is
+the identity: `Factor.polyCoords` is a section of `Factor.rawPoly`. -/
 theorem rawPoly_polyCoords (levels : List Level)
     (f : DensePoly (Arithmetic.Coeff levels)) :
     Factor.rawPoly levels (Factor.polyCoords f) = f := by
@@ -1343,7 +1299,7 @@ theorem conjugatePolynomial_shiftTop (level : Level)
         (Polynomial.X - Polynomial.C ((c : ℂ) * x)) := by
   let hinvTop := LevelSemantics.coeffDenote_inv (level :: lower) hvalid
     hinjectiveTop
-  letI : Field (Arithmetic.Coeff (level :: lower)) :=
+  let : Field (Arithmetic.Coeff (level :: lower)) :=
     coeffFieldPoly (level :: lower) hvalid hinjectiveTop hinvTop
   let conjugate := conjugateMap level lower hvalid hinjectiveTop x hrelation
   have hsource : conjugatePolynomial level lower x f =
@@ -1436,11 +1392,11 @@ theorem outerEval_shifted (level : Level) (lower : List Level)
     hinjectiveLower
   let hinvTop := LevelSemantics.coeffDenote_inv (level :: lower) hvalid
     hinjectiveTop
-  letI : Field (Arithmetic.Coeff lower) :=
+  let : Field (Arithmetic.Coeff lower) :=
     coeffFieldPoly lower hvalid.2.2 hinjectiveLower hinvLower
-  letI : Field (Arithmetic.Coeff (level :: lower)) :=
+  let : Field (Arithmetic.Coeff (level :: lower)) :=
     coeffFieldPoly (level :: lower) hvalid hinjectiveTop hinvTop
-  letI : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
+  let : CommRing (DensePoly (Arithmetic.Coeff lower)) := denseCommRing
   let topHom := LevelSemantics.coeffHom (level :: lower) hvalid
     hinjectiveTop hinvTop
   have hrelation :

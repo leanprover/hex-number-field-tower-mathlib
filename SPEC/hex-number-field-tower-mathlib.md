@@ -1,5 +1,12 @@
 # hex-number-field-tower-mathlib (depends on hex-number-field-tower + hex-number-field-mathlib + hex-resultant-mathlib + hex-berlekamp-zassenhaus-mathlib + hex-row-reduce-mathlib)
 
+## Correspondence-only classification
+
+This library is a `correspondence-only-layer`.
+
+Computational conformance owners: `HexNumberFieldTower`, `HexNumberField`
+Computational performance owners: `HexNumberFieldTower`, `HexNumberField`
+
 Mathlib companion for `hex-number-field-tower`. It interprets every validated
 tower as a finite extension of `ℚ` with a fixed embedding into `ℂ`, proves the
 coordinate field operations, and verifies Trager factorization, adjoining,
@@ -75,7 +82,10 @@ theorem NumberTower.factor?_isSome (T) (f : T.Poly) :
 
 `Factorization.Sound` states reconstruction including the scalar, monicity,
 positive multiplicities, irreducibility over `T.toField`, no associates, and
-deterministic ordering.
+deterministic ordering. The no-associates clause is not a separate conjunct:
+monicity together with the strict `factorsSorted` ordering already forbids
+associated factors, since associated monic polynomials are equal and the
+strict order rules out duplicates.
 
 The proof is organized by Yun squarefree component:
 
@@ -97,8 +107,10 @@ substitute: for example, in `ℚ(√2, √3)`, a factor defined over `ℚ(√3)`
 duplicated by the unused `√2` embeddings, so every absolute norm after shifting
 only by `√3` has repeated factors.
 
-The Stage 1 vanishing theorem from `hex-resultant-mathlib` is insufficient for
-steps 2 and 5. These theorems depend on its Stage 2 full value correspondence.
+The vanishing criterion of `hex-resultant-mathlib`
+(`resultant_eq_zero_iff_common_root`) is insufficient for steps 2 and 5; they
+rest on its full value correspondence
+(`resultant_eq_leadingCoeff_mul_prod_roots`).
 
 ## Adjoining
 
@@ -169,7 +181,7 @@ dimensions yield the opposite round trip and multiplicativity.
 `AlgebraicRoot.exact_toComplex` identifies the canonical primitive root stored
 in the result.
 
-## Required developments
+## Developments
 
 1. Iterated quotient-field semantics and fixed complex embeddings.
 2. Coordinate basis, dimension, and arithmetic correspondence.
@@ -179,8 +191,7 @@ in the result.
 6. Splitting termination, reconstruction, and generated-field minimality.
 7. Primitive-element degree test and flattening coordinate equivalences.
 
-Items 3 through 7 begin only after Stage 2 of `hex-resultant-mathlib` is
-available.
+Items 3 through 7 rest on that resultant value correspondence.
 
 ## File organisation
 
@@ -203,6 +214,18 @@ HexNumberFieldTowerMathlib/
 
 The library is verified by building it. Executable conformance belongs to
 `hex-number-field-tower`.
+
+## External comparators
+
+No external comparator is required.
+
+**Justification:** `correspondence-only-layer` per
+`SPEC/benchmarking.md §"Comparator naming"`. The library introduces no
+tower arithmetic or factorization algorithm; it verifies the executable
+tower operations and the Trager pipeline implemented elsewhere. The
+computational performance owners are hex-number-field-tower, where the
+dimension ladders and the PARI/GP nffactor comparator are measured, and
+hex-number-field for the base-level arithmetic it transports.
 
 ## References
 
