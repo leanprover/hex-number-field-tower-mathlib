@@ -230,7 +230,7 @@ theorem factorSquarefree_product (levels : List Level)
         apply (HexPolyMathlib.equiv (R := Rat)).injective
         simpa using hinputPoly
       simp only [Factor.factorSquarefree?] at hresult
-      simp only [Factor.factorRat?] at hresult
+      simp only [Factor.factorRat?, ZPoly.ratSquarefree] at hresult
       split at hresult
       · cases hresult
         exfalso
@@ -414,7 +414,7 @@ theorem recover_product_associated (level : Level)
     DensePoly.gcd shifted (lifted lowerFactor)
   let common (lowerFactor : Array (Array Rat)) := Norm.monic (g lowerFactor)
   let pass (lowerFactor : Array (Array Rat)) :=
-    0 < (common lowerFactor).degree?.getD 0
+    0 < (common lowerFactor).natDegree
   let unshifted (lowerFactor : Array (Array Rat)) :=
     Factor.rawPoly (level :: lower)
       (Factor.shiftTop level lower (Factor.polyCoords (common lowerFactor))
@@ -525,7 +525,7 @@ theorem recover_product_associated (level : Level)
     apply Polynomial.isUnit_iff_degree_eq_zero.mpr
     rw [Polynomial.degree_eq_natDegree (hcommonPolyNe lowerFactor),
       HexPolyMathlib.natDegree_toPolynomial]
-    have hdegree : (common lowerFactor).degree?.getD 0 = 0 :=
+    have hdegree : (common lowerFactor).natDegree = 0 :=
       Nat.eq_zero_of_not_pos hskip
     rw [hdegree]
     rfl
@@ -543,7 +543,8 @@ theorem recover_product_associated (level : Level)
     have hfold := foldl_push_if_toList pass recovered
       lowerFactors.toList (#[] : Array (Array (Array Rat)))
     simpa only [Factor.recover, Array.foldl_toList, List.nil_append,
-      shifted, lifted, g, common, pass, unshifted, result, recovered] using hfold
+      shifted, lifted, g, common, pass, unshifted, result, recovered,
+      recoveryGcd_eq (level :: lower) hvalid hinjectiveTop] using hfold
   rw [taylor_list_prod, hrecoverList]
   simpa [List.map_filterMap, Function.comp_def, recovered,
     rawPoly_polyCoords, delta, shifted, lifted] using hfiltered
@@ -597,7 +598,7 @@ theorem recover_product_monic (level : Level) (lower : List Level)
           Factor.recover level lower shift component lowerFactors := by
         exact Array.mem_toList_iff.mp (hmem factor (by simp))
       obtain ⟨lowerFactor, hlowerFactor, hdegree, hrecovered⟩ :=
-        recover_mem level lower shift component lowerFactors hfactorMem
+        recover_mem level lower hvalid hinjectiveTop shift component lowerFactors hfactorMem
       let shifted := Factor.rawPoly (level :: lower)
         (Factor.shiftTop level lower component shift)
       let lifted := Factor.rawPoly (level :: lower)
@@ -1010,7 +1011,8 @@ theorem factorRat_isSome (input : DensePoly Rat)
   dsimp only at hproduct
   simp only [Factor.factorRat?, hinputZero, Bool.false_eq_true, ite_false]
   rw [show DensePoly.scale input.leadingCoeff⁻¹ input = p from rfl]
-  simp only [hpZero, hgcd, ite_eq_left]
+  simp only [ZPoly.ratSquarefree, hpZero, hgcd, decide_true, Bool.not_false,
+    Bool.true_and, ite_eq_left]
   rw [hproduct]
   simp
 

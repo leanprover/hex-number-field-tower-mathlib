@@ -655,6 +655,71 @@ theorem derivative_eq (levels : List Level)
   rw [hmap f, hmap (DensePoly.derivative f),
     Polynomial.derivative_map, HexPolyMathlib.toPolynomial_derivative]
 
+/-- The nonzero dense gcd test is separability over a field. -/
+private theorem separable_iff {F : Type} [Field F] [DecidableEq F]
+    (p : DensePoly F) :
+    ((!p.isZero && decide ((DensePoly.gcd p (DensePoly.derivative p)).size ≤ 1)) = true) ↔
+      (HexPolyMathlib.toPolynomial p).Separable := by
+  let : CommRing (DensePoly F) := denseCommRing
+  let P := HexPolyMathlib.toPolynomial p
+  let d := DensePoly.derivative p
+  let g := DensePoly.gcd p d
+  let G := EuclideanDomain.gcd P P.derivative
+  have hassociated : Associated (HexPolyMathlib.toPolynomial g) G := by
+    simpa only [g, G, P, d, HexPolyMathlib.toPolynomial_derivative] using
+      HexPolyMathlib.toPolynomial_gcd_associated p d
+  change ((!p.isZero && decide (g.size ≤ 1)) = true) ↔ P.Separable
+  simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq]
+  constructor
+  · rintro ⟨hpzero, hgdegree⟩
+    have hpne : P ≠ 0 := by
+      intro hzero
+      have hpDense : p ≠ 0 := by
+        intro hpEq
+        have hsize := (DensePoly.isZero_eq_false_iff p).mp hpzero
+        rw [hpEq] at hsize
+        simp at hsize
+      apply hpDense
+      apply (HexPolyMathlib.equiv
+        (R := F)).injective
+      change HexPolyMathlib.toPolynomial p =
+        HexPolyMathlib.toPolynomial (0 : DensePoly F)
+      rw [HexPolyMathlib.toPolynomial_zero]
+      exact hzero
+    have hGne : G ≠ 0 := by
+      intro hzero
+      exact hpne (EuclideanDomain.gcd_eq_zero_iff.mp hzero).1
+    have hgne : HexPolyMathlib.toPolynomial g ≠ 0 :=
+      fun hzero => hGne (hassociated.eq_zero_iff.mp hzero)
+    have hgunit : IsUnit (HexPolyMathlib.toPolynomial g) := by
+      apply Polynomial.isUnit_iff_degree_eq_zero.mpr
+      rw [Polynomial.degree_eq_natDegree hgne,
+        (HexPolyZMathlib.size_le_one_iff_natDegree_eq_zero g).mp hgdegree]
+      rfl
+    rw [Polynomial.separable_def, ← EuclideanDomain.gcd_isUnit_iff]
+    exact hassociated.isUnit_iff.mp hgunit
+  · intro hseparable
+    have hpne : P ≠ 0 := hseparable.ne_zero
+    have hpDense : p ≠ 0 := by
+      intro hzero
+      apply hpne
+      have hmapZero := congrArg HexPolyMathlib.toPolynomial hzero
+      simpa only [P, HexPolyMathlib.toPolynomial_zero] using hmapZero
+    have hpzero : p.isZero = false := by
+      rw [DensePoly.isZero_eq_false_iff]
+      by_contra hsize
+      apply hpDense
+      exact (DensePoly.size_eq_zero_iff p).mp
+        (Nat.eq_zero_of_not_pos hsize)
+    have hGunit : IsUnit G := by
+      rw [EuclideanDomain.gcd_isUnit_iff]
+      exact hseparable
+    have hgunit : IsUnit (HexPolyMathlib.toPolynomial g) :=
+      hassociated.isUnit_iff.mpr hGunit
+    refine ⟨hpzero, ?_⟩
+    rw [HexPolyZMathlib.size_le_one_iff_natDegree_eq_zero]
+    exact Polynomial.natDegree_eq_zero_of_isUnit hgunit
+
 /-- The executable gcd-based squarefreeness test is exactly ordinary
 polynomial squarefreeness after semantic coefficient interpretation. -/
 theorem isSquarefree_iff (levels : List Level)
@@ -671,69 +736,24 @@ theorem isSquarefree_iff (levels : List Level)
   let : CommRing (DensePoly (Arithmetic.Coeff levels)) := denseCommRing
   let p := Factor.rawPoly levels f
   let P := HexPolyMathlib.toPolynomial p
-  let d := DensePoly.derivative p
-  let g := DensePoly.gcd p d
-  let G := EuclideanDomain.gcd P P.derivative
-  have hderivative : derivative levels p = d :=
-    derivative_eq levels hvalid hinjective hinv p
-  have hassociated : Associated (HexPolyMathlib.toPolynomial g) G := by
-    simpa only [g, G, P, d, HexPolyMathlib.toPolynomial_derivative] using
-      HexPolyMathlib.toPolynomial_gcd_associated p d
   have hboolean : Norm.isSquarefree levels f ↔ P.Separable := by
-    change ((!p.isZero &&
-      decide ((DensePoly.gcd p (derivative levels p)).size ≤ 1)) = true) ↔ _
-    rw [hderivative]
-    change ((!p.isZero && decide (g.size ≤ 1)) = true) ↔ _
-    simp only [Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq]
-    constructor
-    · rintro ⟨hpzero, hgdegree⟩
-      have hpne : P ≠ 0 := by
-        intro hzero
-        have hpDense : p ≠ 0 := by
-          intro hpEq
-          have hsize := (DensePoly.isZero_eq_false_iff p).mp hpzero
-          rw [hpEq] at hsize
-          simp at hsize
-        apply hpDense
-        apply (HexPolyMathlib.equiv
-          (R := Arithmetic.Coeff levels)).injective
-        change HexPolyMathlib.toPolynomial p =
-          HexPolyMathlib.toPolynomial (0 : DensePoly (Arithmetic.Coeff levels))
-        rw [HexPolyMathlib.toPolynomial_zero]
-        exact hzero
-      have hGne : G ≠ 0 := by
-        intro hzero
-        exact hpne (EuclideanDomain.gcd_eq_zero_iff.mp hzero).1
-      have hgne : HexPolyMathlib.toPolynomial g ≠ 0 :=
-        fun hzero => hGne (hassociated.eq_zero_iff.mp hzero)
-      have hgunit : IsUnit (HexPolyMathlib.toPolynomial g) := by
-        apply Polynomial.isUnit_iff_degree_eq_zero.mpr
-        rw [Polynomial.degree_eq_natDegree hgne,
-          (HexPolyZMathlib.size_le_one_iff_natDegree_eq_zero g).mp hgdegree]
-        rfl
-      rw [Polynomial.separable_def, ← EuclideanDomain.gcd_isUnit_iff]
-      exact hassociated.isUnit_iff.mp hgunit
-    · intro hseparable
-      have hpne : P ≠ 0 := hseparable.ne_zero
-      have hpDense : p ≠ 0 := by
-        intro hzero
-        apply hpne
-        have hmapZero := congrArg HexPolyMathlib.toPolynomial hzero
-        simpa only [P, HexPolyMathlib.toPolynomial_zero] using hmapZero
-      have hpzero : p.isZero = false := by
-        rw [DensePoly.isZero_eq_false_iff]
-        by_contra hsize
-        apply hpDense
-        exact (DensePoly.size_eq_zero_iff p).mp
-          (Nat.eq_zero_of_not_pos hsize)
-      have hGunit : IsUnit G := by
-        rw [EuclideanDomain.gcd_isUnit_iff]
-        exact hseparable
-      have hgunit : IsUnit (HexPolyMathlib.toPolynomial g) :=
-        hassociated.isUnit_iff.mpr hGunit
-      refine ⟨hpzero, ?_⟩
-      rw [HexPolyZMathlib.size_le_one_iff_natDegree_eq_zero]
-      exact Polynomial.natDegree_eq_zero_of_isUnit hgunit
+    cases levels with
+    | nil =>
+      change ZPoly.ratSquarefree (Factor.toRatPoly f) ↔ _
+      rw [ZPoly.ratSquarefree, separable_iff, ← LevelSemantics.map_rawPoly_nil f]
+      change IsCoprime
+          ((HexPolyMathlib.toPolynomial (Factor.rawPoly [] f)).map
+            LevelSemantics.coeffRatEquiv.toRingHom)
+          (Polynomial.derivative
+            ((HexPolyMathlib.toPolynomial (Factor.rawPoly [] f)).map
+              LevelSemantics.coeffRatEquiv.toRingHom)) ↔ _
+      rw [Polynomial.derivative_map]
+      exact Polynomial.isCoprime_map LevelSemantics.coeffRatEquiv.toRingHom
+    | cons level lower =>
+      change ((!p.isZero && decide
+        ((DensePoly.gcd p (derivative (level :: lower) p)).size ≤ 1)) = true) ↔ _
+      rw [derivative_eq (level :: lower) hvalid hinjective hinv p]
+      exact separable_iff p
   have hsemantic :
       Squarefree (rawPolynomial levels p) ↔ P.Separable := by
     rw [← PerfectField.separable_iff_squarefree]
@@ -998,13 +1018,10 @@ theorem eval_liftCoefficient (level : Level) (lower : List Level)
     exact (DensePoly.size_ofCoeffs_le _).trans (by simp)
   have hdegree : (HexPolyMathlib.toPolynomial lifted).natDegree <
       level.degree := by
-    rw [HexPolyMathlib.natDegree_toPolynomial]
-    by_cases hzero : lifted.size = 0
-    · have hlifted : lifted = 0 := (DensePoly.size_eq_zero_iff lifted).mp hzero
-      simpa [hlifted] using Nat.zero_lt_of_lt hvalid.1.1
-    · rw [DensePoly.degree?_eq_some_of_pos_size lifted (Nat.pos_of_ne_zero hzero),
-        Option.getD_some]
-      omega
+    rw [HexPolyMathlib.natDegree_toPolynomial,
+      DensePoly.natDegree_eq_size_sub_one]
+    have := Nat.zero_lt_of_lt hvalid.1.1
+    omega
   rw [rawOuter_eq_map lower hvalid.2.2 hinjective hinv,
     Polynomial.eval_map,
     Polynomial.eval₂_eq_sum_range'
@@ -1102,10 +1119,6 @@ theorem eval_shiftedOuter (level : Level) (lower : List Level)
     simp only [ψ]
     rw [rawOuter_eq_map lower hvalid.2.2 hinjective hinv]
     simp
-  have hone : ψ 1 = 1 := by
-    simp only [ψ]
-    rw [rawOuter_eq_map lower hvalid.2.2 hinjective hinv]
-    simp
   have hadd (u v : DensePoly (DensePoly (Arithmetic.Coeff lower))) :
       ψ (u + v) = ψ u + ψ v := by
     simp only [ψ]
@@ -1122,38 +1135,23 @@ theorem eval_shiftedOuter (level : Level) (lower : List Level)
       rawOuter_eq_map lower hvalid.2.2 hinjective hinv,
       HexPolyMathlib.toPolynomial_mul, Polynomial.map_mul,
       Polynomial.eval_mul]
-  have hfold : ∀ (items : List (Array Rat))
-      (state : DensePoly (DensePoly (Arithmetic.Coeff lower)) ×
-        DensePoly (DensePoly (Arithmetic.Coeff lower))),
-      ψ ((items.foldl (fun state coefficient =>
-          (state.1 + liftCoefficient level lower coefficient * state.2,
-            state.2 * base)) state).1) =
-        ψ state.1 + ψ state.2 *
-          ((items.foldr
-            (fun a value =>
-              Polynomial.C (LevelSemantics.evalAt level lower x a) +
-                Polynomial.X * value) 0).comp q) := by
+  have hfold : ∀ (items : List (Array Rat)),
+      ψ (items.foldr (fun coefficient value =>
+        liftCoefficient level lower coefficient + base * value) 0) =
+      ((items.foldr (fun a value =>
+        Polynomial.C (LevelSemantics.evalAt level lower x a) +
+          Polynomial.X * value) 0).comp q) := by
     intro items
     induction items with
-    | nil =>
-        intro state
-        simp
+    | nil => simpa using hzero
     | cons a items ih =>
-        intro state
-        simp only [List.foldl_cons, List.foldr_cons]
-        rw [ih]
-        simp only []
-        rw [hadd, hmul, hmul, hlift, hbase]
-        simp only [
+        simp only [List.foldr_cons, hadd, hmul, hlift, hbase, ih,
           Polynomial.add_comp, Polynomial.C_comp,
           Polynomial.mul_comp, Polynomial.X_comp]
-        ring
-  change ψ ((f.foldl (fun state coefficient =>
-      (state.1 + liftCoefficient level lower coefficient * state.2,
-        state.2 * base)) (0, 1)).1) = _
-  rw [← Array.foldl_toList]
-  simpa [conjugatePolynomial, q, hzero, hone] using
-    hfold f.toList (0, 1)
+  change ψ (f.foldr (fun coefficient value =>
+    liftCoefficient level lower coefficient + base * value) 0) = _
+  rw [← Array.foldr_toList]
+  simpa [conjugatePolynomial, q] using hfold f.toList
 
 /-- The executable outer defining polynomial is the constant-coefficient lift
 of the ordinary lower-field relation. -/

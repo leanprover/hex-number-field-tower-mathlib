@@ -530,7 +530,7 @@ theorem tragerNorm_not_isUnit (level : Level) (lower : List Level)
     (hvalid : LevelsValid (level :: lower))
     (hinjectiveTop : LevelSemantics.DenoteInjective (level :: lower))
     (f : DensePoly (Arithmetic.Coeff (level :: lower)))
-    (hdegree : 0 < f.degree?.getD 0) :
+    (hdegree : 0 < f.natDegree) :
     let hinjectiveLower := hinjectiveTop.tail level lower hvalid.1.1
     let hinvLower := LevelSemantics.coeffDenote_inv lower hvalid.2.2
       hinjectiveLower
@@ -698,7 +698,7 @@ theorem recoveredCommon_irreducible (level : Level)
     let common := Norm.monic (DensePoly.gcd P lifted)
     Squarefree (HexPolyMathlib.toPolynomial (tragerNorm level lower P)) →
       Irreducible (HexPolyMathlib.toPolynomial q) →
-      0 < common.degree?.getD 0 →
+      0 < common.natDegree →
       Irreducible (HexPolyMathlib.toPolynomial common) := by
   let hinjectiveLower := hinjectiveTop.tail level lower hvalid.1.1
   let hinvLower := LevelSemantics.coeffDenote_inv lower hvalid.2.2
@@ -716,7 +716,7 @@ theorem recoveredCommon_irreducible (level : Level)
   change Squarefree
       (HexPolyMathlib.toPolynomial (tragerNorm level lower P)) →
     Irreducible (HexPolyMathlib.toPolynomial q) →
-    0 < common.degree?.getD 0 →
+    0 < common.natDegree →
     Irreducible (HexPolyMathlib.toPolynomial common)
   intro hsquarefree hq hdegree
   have hcommonNe : common ≠ 0 := by
@@ -788,11 +788,11 @@ theorem recoveredCommon_irreducible (level : Level)
     apply Polynomial.isUnit_iff_degree_eq_zero.mpr
     rw [Polynomial.degree_eq_natDegree hbNe, hzero]
     rfl
-  have hadDegree : 0 < ad.degree?.getD 0 := by
+  have hadDegree : 0 < ad.natDegree := by
     rw [← HexPolyMathlib.natDegree_toPolynomial]
     rw [show HexPolyMathlib.toPolynomial ad = a by simp [ad]]
     exact Nat.pos_of_ne_zero haNatDegree
-  have hbdDegree : 0 < bd.degree?.getD 0 := by
+  have hbdDegree : 0 < bd.natDegree := by
     rw [← HexPolyMathlib.natDegree_toPolynomial]
     rw [show HexPolyMathlib.toPolynomial bd = b by simp [bd]]
     exact Nat.pos_of_ne_zero hbNatDegree
@@ -855,7 +855,7 @@ theorem recoveredFactor_irreducible (level : Level)
       (tragerNorm level lower shifted)) →
       Irreducible (HexPolyMathlib.toPolynomial q) →
       Factor.polyCoords q = lowerFactor →
-      0 < common.degree?.getD 0 →
+      0 < common.natDegree →
       Irreducible (HexPolyMathlib.toPolynomial
         (Factor.rawPoly (level :: lower) (Factor.polyCoords result))) := by
   let hinjectiveLower := hinjectiveTop.tail level lower hvalid.1.1
@@ -880,14 +880,14 @@ theorem recoveredFactor_irreducible (level : Level)
       (tragerNorm level lower shifted)) →
     Irreducible (HexPolyMathlib.toPolynomial q) →
     Factor.polyCoords q = lowerFactor →
-    0 < common.degree?.getD 0 →
+    0 < common.natDegree →
     Irreducible (HexPolyMathlib.toPolynomial
       (Factor.rawPoly (level :: lower) (Factor.polyCoords result)))
   intro hsquarefree hq hlowerCoords hdegree
   have hcommon : Irreducible (HexPolyMathlib.toPolynomial common) := by
     have hdegree' : 0 < (Norm.monic (DensePoly.gcd shifted
         (Factor.rawPoly (level :: lower)
-          (Factor.embedLower level lower (Factor.polyCoords q))))).degree?.getD 0 := by
+          (Factor.embedLower level lower (Factor.polyCoords q))))).natDegree := by
       simpa [common, lifted, hlowerCoords] using hdegree
     have h := recoveredCommon_irreducible level lower hvalid
       hinjectiveTop shifted q
@@ -968,18 +968,12 @@ theorem findSquarefreeShift_norm (level : Level)
 least two entries. -/
 theorem array_degree_pos_of_raw_degree_pos (levels : List Level)
     (f : Array (Array Rat))
-    (hdegree : 0 < (Factor.rawPoly levels f).degree?.getD 0) :
+    (hdegree : 0 < (Factor.rawPoly levels f).natDegree) :
     0 < f.size - 1 := by
   let p := Factor.rawPoly levels f
-  change 0 < p.degree?.getD 0 at hdegree
-  have hpSize : p.size ≠ 0 := by
-    intro hzero
-    have hpDegree : p.degree?.getD 0 = 0 := by
-      rw [(DensePoly.degree?_eq_none_iff p).2 hzero, Option.getD_none]
-    omega
-  have hpDegree : p.degree?.getD 0 = p.size - 1 := by
-    rw [DensePoly.degree?_eq_some_of_pos_size p (Nat.pos_of_ne_zero hpSize),
-      Option.getD_some]
+  change 0 < p.natDegree at hdegree
+  have hpDegree : p.natDegree = p.size - 1 :=
+    DensePoly.natDegree_eq_size_sub_one p
   have hpSizeLe : p.size ≤ f.size := by
     exact (DensePoly.size_ofCoeffs_le _).trans (by simp)
   rw [hpDegree] at hdegree
@@ -992,7 +986,7 @@ theorem oneLevel_degree_pos (level : Level) (lower : List Level)
     (hvalid : LevelsValid (level :: lower))
     (hinjectiveTop : LevelSemantics.DenoteInjective (level :: lower))
     (f : Array (Array Rat)) (shift : Int)
-    (hdegree : 0 < (Factor.rawPoly (level :: lower) f).degree?.getD 0) :
+    (hdegree : 0 < (Factor.rawPoly (level :: lower) f).natDegree) :
     let hinjectiveLower := hinjectiveTop.tail level lower hvalid.1.1
     let hinvLower := LevelSemantics.coeffDenote_inv lower hvalid.2.2
       hinjectiveLower
@@ -1005,7 +999,7 @@ theorem oneLevel_degree_pos (level : Level) (lower : List Level)
     Squarefree (HexPolyMathlib.toPolynomial
       (Factor.rawPoly lower (Norm.oneLevel level lower f shift))) →
     0 < (Factor.rawPoly lower
-      (Norm.oneLevel level lower f shift)).degree?.getD 0 := by
+      (Norm.oneLevel level lower f shift)).natDegree := by
   let hinjectiveLower := hinjectiveTop.tail level lower hvalid.1.1
   let hinvLower := LevelSemantics.coeffDenote_inv lower hvalid.2.2
     hinjectiveLower
@@ -1020,14 +1014,14 @@ theorem oneLevel_degree_pos (level : Level) (lower : List Level)
   let shifted := Factor.rawPoly (level :: lower)
     (Factor.shiftTop level lower f shift)
   let norm := Factor.rawPoly lower (Norm.oneLevel level lower f shift)
-  have hshiftedDegree : 0 < shifted.degree?.getD 0 := by
+  have hshiftedDegree : 0 < shifted.natDegree := by
     have hnatDegree := congrArg Polynomial.natDegree
       (toPolynomial_shiftTop level lower hvalid hinjectiveTop f shift)
     rw [Polynomial.natDegree_taylor,
       HexPolyMathlib.natDegree_toPolynomial,
       HexPolyMathlib.natDegree_toPolynomial] at hnatDegree
     change 0 < (Factor.rawPoly (level :: lower)
-      (Factor.shiftTop level lower f shift)).degree?.getD 0
+      (Factor.shiftTop level lower f shift)).natDegree
     rw [hnatDegree]
     exact hdegree
   have hnotUnit : ¬ IsUnit (HexPolyMathlib.toPolynomial norm) := by
@@ -1172,10 +1166,31 @@ theorem polynomial_squarefree_map {K L : Type*}
   PerfectField.separable_iff_squarefree.mp
     ((PerfectField.separable_iff_squarefree.mpr hp).map (f := f))
 
+/-- Monic recovery division preserves the exact unnormalised gcd. -/
+theorem recoveryGcd_eq (levels : List Level) (hvalid : LevelsValid levels)
+    (hinjective : LevelSemantics.DenoteInjective levels)
+    (p q : DensePoly (Arithmetic.Coeff levels)) :
+    Factor.recoveryGcd p q = DensePoly.gcd p q := by
+  let hinv := LevelSemantics.coeffDenote_inv levels hvalid hinjective
+  let : Field (Arithmetic.Coeff levels) :=
+    Norm.coeffFieldPoly levels hvalid hinjective hinv
+  unfold Factor.recoveryGcd
+  split
+  · rename_i h
+    rw [DensePoly.gcd_eq_aux_mod p q h.1 h.2.1]
+    congr 1
+    rw [DensePoly.modArray_eq_divModArray_snd]
+    have hmonic : DensePoly.Monic p := h.2.2
+    change (DensePoly.divModMonic q p hmonic).2 = (DensePoly.divMod q p).2
+    exact congrArg Prod.snd (DensePoly.divModMonic_eq_divMod_of_monic q p hmonic)
+  · rfl
+
 /-- Membership inversion for `Factor.recover`: every recovered factor arises
 from some lower factor whose lifted gcd with the shifted component is
 nonconstant, by un-shifting and renormalising that gcd. -/
 theorem recover_mem (level : Level) (lower : List Level)
+    (hvalid : LevelsValid (level :: lower))
+    (hinjective : LevelSemantics.DenoteInjective (level :: lower))
     (shift : Int) (component : Array (Array Rat))
     (lowerFactors : Array (Array (Array Rat)))
     {factor : Array (Array Rat)}
@@ -1187,7 +1202,7 @@ theorem recover_mem (level : Level) (lower : List Level)
       let lifted := Factor.rawPoly (level :: lower)
         (Factor.embedLower level lower lowerFactor)
       let common := Norm.monic (DensePoly.gcd shifted lifted)
-      0 < common.degree?.getD 0 ∧
+      0 < common.natDegree ∧
         Factor.polyCoords
           (Norm.monic (Factor.rawPoly (level :: lower)
             (Factor.shiftTop level lower (Factor.polyCoords common)
@@ -1200,7 +1215,7 @@ theorem recover_mem (level : Level) (lower : List Level)
   let common (lowerFactor : Array (Array Rat)) :=
     Norm.monic (DensePoly.gcd shifted (lifted lowerFactor))
   let pass (lowerFactor : Array (Array Rat)) :=
-    0 < (common lowerFactor).degree?.getD 0
+    0 < (common lowerFactor).natDegree
   let recovered (lowerFactor : Array (Array Rat)) :=
     Factor.polyCoords
       (Norm.monic (Factor.rawPoly (level :: lower)
@@ -1210,7 +1225,7 @@ theorem recover_mem (level : Level) (lower : List Level)
       (fun out lowerFactor =>
         if pass lowerFactor then out.push (recovered lowerFactor) else out) #[] := by
     simpa only [Factor.recover, Array.foldl_toList, shifted, lifted,
-      common, pass, recovered] using hfactor
+      common, pass, recovered, recoveryGcd_eq (level :: lower) hvalid hinjective] using hfactor
   rcases mem_foldl_push_if pass recovered lowerFactors.toList #[] factor hfold with
       hnil | ⟨lowerFactor, hlower, hpass, hrecovered⟩
   · simp at hnil
@@ -1260,7 +1275,7 @@ theorem recover_mem_sound (level : Level) (lower : List Level)
   dsimp only
   intro hsquarefree hlower factor hfactor
   obtain ⟨lowerFactor, hlowerFactor, hdegree, hrecovered⟩ :=
-    recover_mem level lower shift component lowerFactors hfactor
+    recover_mem level lower hvalid hinjectiveTop shift component lowerFactors hfactor
   have hlowerSound := hlower lowerFactor hlowerFactor
   constructor
   · rw [← hrecovered, rawPoly_polyCoords]
@@ -1306,7 +1321,7 @@ theorem polyCoords_rawPoly_ofRatPoly (f : DensePoly Rat)
       HexPolyMathlib.toPolynomial (0 : DensePoly Rat)
     rw [← hmap, hzero, HexPolyMathlib.toPolynomial_zero,
       Polynomial.map_zero, HexPolyMathlib.toPolynomial_zero]
-  have hdegree : q.degree?.getD 0 = f.degree?.getD 0 := by
+  have hdegree : q.natDegree = f.natDegree := by
     have hmapDegree := congrArg Polynomial.natDegree hmap
     rw [Polynomial.natDegree_map_eq_of_injective
       (f := LevelSemantics.coeffRatEquiv.toRingHom)
@@ -1317,9 +1332,8 @@ theorem polyCoords_rawPoly_ofRatPoly (f : DensePoly Rat)
       hq ((DensePoly.size_eq_zero_iff q).mp h)
     have hfpos : 0 < f.size := Nat.pos_of_ne_zero fun h =>
       hf ((DensePoly.size_eq_zero_iff f).mp h)
-    rw [DensePoly.degree?_eq_some_of_pos_size q hqpos,
-      DensePoly.degree?_eq_some_of_pos_size f hfpos] at hdegree
-    simp only [Option.getD_some] at hdegree
+    rw [DensePoly.natDegree_eq_size_sub_one,
+      DensePoly.natDegree_eq_size_sub_one] at hdegree
     omega
   change Factor.polyCoords q = Factor.ofRatPoly f
   rw [Factor.polyCoords, Factor.ofRatPoly]
@@ -1635,7 +1649,7 @@ theorem factorRat_mem_sound (input : DensePoly Rat)
     LevelSemantics.DenoteInjective.nil
     LevelSemantics.coeffDenote_inv_nil
   intro factor hfactor
-  simp only [Factor.factorRat?] at hresult
+  simp only [Factor.factorRat?, ZPoly.ratSquarefree] at hresult
   split at hresult
   · cases hresult
     simp at hfactor

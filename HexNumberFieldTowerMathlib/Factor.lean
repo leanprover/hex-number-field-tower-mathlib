@@ -21,9 +21,9 @@ namespace Hex.NumberTower
 /-- A nonconstant tower polynomial has no factorization into two nonconstant
 tower polynomials. -/
 def PolynomialIrreducible (T : NumberTower) (f : Poly T) : Prop :=
-  !f.isZero ∧ 0 < f.degree?.getD 0 ∧
+  !f.isZero ∧ 0 < f.natDegree ∧
     ∀ g h : Poly T, f = g * h →
-      g.degree?.getD 0 = 0 ∨ h.degree?.getD 0 = 0
+      g.natDegree = 0 ∨ h.natDegree = 0
 
 namespace Factorization
 
@@ -243,9 +243,8 @@ theorem polyCoords_rawPoly (T : NumberTower) (f : Poly T) :
       (HexPolyMathlib.toPolynomial q)
     rw [hmap, HexPolyMathlib.natDegree_toPolynomial,
       HexPolyMathlib.natDegree_toPolynomial,
-      DensePoly.degree?_eq_some_of_pos_size q hqsize,
-      DensePoly.degree?_eq_some_of_pos_size f hfsize] at hnat
-    simp only [Option.getD_some] at hnat
+      DensePoly.natDegree_eq_size_sub_one,
+      DensePoly.natDegree_eq_size_sub_one] at hnat
     have hsize : q.size = f.size := by omega
     change Factor.polyCoords q = f.toArray.map coeffs
     apply Array.ext
@@ -381,7 +380,7 @@ theorem PolynomialIrreducible.toMathlib {T : NumberTower} {f : Poly T}
         rw [hab, ha, zero_mul]
       apply Polynomial.isUnit_iff_degree_eq_zero.mpr
       rw [Polynomial.degree_eq_natDegree ha]
-      have hnat : a.natDegree = g.degree?.getD 0 := by
+      have hnat : a.natDegree = g.natDegree := by
         rw [← HexPolyMathlib.natDegree_toPolynomial]
         simp [g]
       rw [hnat, hg]
@@ -393,7 +392,7 @@ theorem PolynomialIrreducible.toMathlib {T : NumberTower} {f : Poly T}
         rw [hab, hb, mul_zero]
       apply Polynomial.isUnit_iff_degree_eq_zero.mpr
       rw [Polynomial.degree_eq_natDegree hb]
-      have hnat : b.natDegree = h.degree?.getD 0 := by
+      have hnat : b.natDegree = h.natDegree := by
         rw [← HexPolyMathlib.natDegree_toPolynomial]
         simp [h]
       rw [hnat, hh]
@@ -642,7 +641,7 @@ theorem isIrreducible_iff (T : NumberTower) (f : Poly T) :
 /-- Every returned Trager factorization satisfies reconstruction,
 multiplicity, irreducibility, uniqueness, and ordering. -/
 theorem factor?_sound (T : NumberTower) (f : Poly T)
-    {r : Factorization T f} (_h : T.factor? f = some r) :
+    {r : Factorization T f} (_h : factor? f = some r) :
     r.Sound := by
   have hcheck := r.checked
   simp only [checkFactorization, Factor.check, Bool.and_eq_true] at hcheck
@@ -717,7 +716,7 @@ theorem factor?_sound (T : NumberTower) (f : Poly T)
 
 /-- Recursive Trager factorization succeeds for every tower polynomial. -/
 theorem factor?_isSome (T : NumberTower) (f : Poly T) :
-    (T.factor? f).isSome := by
+    (factor? f).isSome := by
   let input := f.toArray.map coeffs
   have hrawSome := factorRaw_isSome T.levels.toList T.valid
     (coeffDenote_injective T) input
