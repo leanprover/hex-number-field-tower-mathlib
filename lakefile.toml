@@ -7,34 +7,39 @@ leanOptions = [
 ]
 
 [[require]]
-name = "HexNumberFieldTower"
-git = "https://github.com/leanprover/hex-number-field-tower.git"
-rev = "v0.6.0"
-
-[[require]]
-name = "HexNumberFieldMathlib"
-git = "https://github.com/leanprover/hex-number-field-mathlib.git"
-rev = "v0.6.0"
-
-[[require]]
-name = "HexResultantMathlib"
-git = "https://github.com/leanprover/hex-resultant-mathlib.git"
-rev = "v0.6.0"
+name = "HexRowReduceMathlib"
+git = "https://github.com/leanprover/hex-row-reduce-mathlib.git"
+rev = "v0.7.0"
 
 [[require]]
 name = "HexBerlekampZassenhausMathlib"
 git = "https://github.com/leanprover/hex-berlekamp-zassenhaus-mathlib.git"
-rev = "v0.6.0"
+rev = "v0.7.0"
 
 [[require]]
-name = "HexRowReduceMathlib"
-git = "https://github.com/leanprover/hex-row-reduce-mathlib.git"
-rev = "v0.6.0"
+name = "HexResultantMathlib"
+git = "https://github.com/leanprover/hex-resultant-mathlib.git"
+rev = "v0.7.0"
+
+[[require]]
+name = "HexNumberFieldMathlib"
+git = "https://github.com/leanprover/hex-number-field-mathlib.git"
+rev = "v0.7.0"
+
+[[require]]
+name = "HexNumberFieldTower"
+git = "https://github.com/leanprover/hex-number-field-tower.git"
+rev = "v0.7.0"
+
+[[require]]
+name = "batteries"
+git = "https://github.com/leanprover-community/batteries"
+rev = "main"
 
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4.git"
-rev = "v4.34.0-rc2"
+rev = "d870b9068518a0870842d15a0cd42637ec30b587"
 
 [[lean_lib]]
 name = "HexNumberFieldTowerMathlib"
